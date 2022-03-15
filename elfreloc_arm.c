@@ -23,7 +23,7 @@
 #define R_ARM_ABS32    0x02
 #define R_ARM_RELATIVE 0x17
 #define R_ARM_GLOB_DAT 0x15
-#define R_ARM_JUMP_SLOT  0x16
+#define R_ARM_JUMP_SLOT  22
 
 
 unsigned char* g_buf = NULL;
@@ -181,14 +181,14 @@ el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel)
             EL_DEBUG("R_AARCH64_NONE\n");
             break;
 
-        case R_ARM_ABS32:
+        case R_ARM_ABS32: // 重定位目标中的值 + 符号表中的 st_value + 基址，符号表的 id 来自于 符号节中的 sh_link
 	    if(!sym)
 	    {
                 EL_DEBUG("R_ARM_JUMP_SLOT with no symbol ref!\n");
                 return EL_BADREL;
             }
 
-            EL_DEBUG("Applying R_ARM_ABS32 reloc @%p\n", p);
+            // EL_DEBUG("Applying R_ARM_ABS32 reloc @%p\n", p);
 
 	    Elf_Sym* _sym = NULL;
 	    if(el_getsymbyid(ctx, rel->r_info >> 8, &_sym))
@@ -201,9 +201,13 @@ el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel)
 
 	case R_ARM_RELATIVE:
 
-            EL_DEBUG("Applying R_ARM_RELATIVE reloc @%p\n", p);
+            // EL_DEBUG("Applying R_ARM_RELATIVE reloc @%p value: %08x\n", p, *(uint32_t*)p);
             *p += ctx->base_load_vaddr;
             break;
+	case R_ARM_GLOB_DAT:
+		
+            // EL_DEBUG("Applying R_ARM_GLOB_DAT reloc @%p value: %08x\n", p, *(uint32_t*)p);
+	    break;
 
 	case R_ARM_JUMP_SLOT:
             if (sym) {
@@ -211,7 +215,7 @@ el_status el_applyrel(el_ctx *ctx, Elf_Rel *rel)
                 return EL_BADREL;
             }
 
-            EL_DEBUG("Applying R_ARM_JUMP_SLOT reloc @%p\n", p);
+            EL_DEBUG("Applying R_ARM_JUMP_SLOT reloc @%p\n, value: %08x", p, *(uint32_t*)p);
             *p += ctx->base_load_vaddr;
             break;
 
